@@ -21,7 +21,6 @@ def process_line(tokens, line_num):
         print ('Address not in order in line ' + str(line_num))
         processing_addr += 8
         some_error_in_block = True
-        return
     processing_addr = addr
     
     try:
@@ -49,40 +48,36 @@ def process_line(tokens, line_num):
             return
             
     
-        
-    
-    
 def process_sum_line(tokens, line_num):
     #チェックサム行
     global vert_sums, some_error_in_block
-    #すでに横サムにエラーが見つかっている場合は何もしない(表示が煩雑なので)
-    if not some_error_in_block: 
+    try:
         try:
+            sum = int(tokens[10], 16)
+        except ValueError:
+            print ('Sum parse error in line ' + str(line_num))
+            raise Exception
+        
+        sum_work = 0
+        for i in range(2,10):
             try:
-                sum = int(tokens[10], 16)
+                val = int(tokens[i], 16)
             except ValueError:
-                print ('Sum parse error in line ' + str(line_num))
+                print ('Value parse error in line ' + str(line_num))
                 raise Exception
+            #チェックサムに加算    
+            sum_work += val
             
-            sum_work = 0
-            for i in range(2,10):
-                try:
-                    val = int(tokens[i], 16)
-                except ValueError:
-                    print ('Value parse error in line ' + str(line_num))
-                    raise Exception
-                #チェックサムに加算    
-                sum_work += val
-                
+            #すでに横サムにエラーが見つかっている場合は何もしない(表示が煩雑なので)
+            if not some_error_in_block: 
                 if val != vert_sums[i-2] % 256:
                     print ('Vertical checksum error in line ' + str(line_num) + ' col ' + str(i-2))
-                    
-                
-            if sum != sum_work % 256:
-                    print ('Checksum error in line ' + str(line_num))
-                    raise Exception
-        except:
-            pass
+            
+        if sum != sum_work % 256:
+                print ('Block checksum error in line ' + str(line_num))
+                raise Exception
+    except:
+        pass
     
     some_error_in_block = False
     vert_sums = [0 for i in range(8)]
