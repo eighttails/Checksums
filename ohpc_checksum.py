@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 '''
-PiO,I/Oなどの工学社系雑誌に掲載されたダンプリスト
-PiOモニタ形式のダンプ、チェックサム出力
-8バイトx16行で1ブロック、
-1行毎に単純サム、1ブロックごとに単純縦サムが付加される。
+Oh!PC関連のダンプリスト用チェックサム
+8バイトごとにチェックサム
+チェックサムは単純サムに加え、アドレスの上位バイトと下位バイトを加算する
 '''
 
 import sys
 import re
 
-YOKO=8
-
-vert_sums = [0 for i in range(YOKO)]
+vert_sums = [0 for i in range(8)]
 processing_addr = -1
 some_error_in_block = False
 
@@ -19,24 +16,23 @@ def process_line(tokens, line_num):
     #通常のデータ行
     global vert_sums, processing_addr, some_error_in_block
     addr = int(tokens[0], 16)
-    if processing_addr != -1 and addr != processing_addr + YOKO:
+    if processing_addr != -1 and addr != processing_addr + 8:
         print ('Address not in order in line ' + str(line_num))
-        processing_addr += YOKO
+        processing_addr += 8
         some_error_in_block = True
     processing_addr = addr
     
     try:
-        sum = int(tokens[YOKO+1], 16)
+        sum = int(tokens[9], 16)
     except ValueError:
         print ('Sum parse error in line ' + str(line_num))
         some_error_in_block = True
         return
     
     sum_work = 0
-    for i in range(1,YOKO+1):
+    for i in range(1,9):
         try:
             val = int(tokens[i], 16)
-            if val < 0 or val > 255 raise ValueError
         except ValueError:
             print ('Value parse error in line ' + str(line_num))
             some_error_in_block = True
@@ -44,7 +40,11 @@ def process_line(tokens, line_num):
         #チェックサムに加算    
         sum_work += val
         vert_sums[i-1] += val
-        
+    
+    #アドレスの上位バイト、下位バイトを加算
+    sum_work += addr // 256
+    sum_work += addr % 256
+    
     if sum != sum_work % 256:
             print ('Checksum error in line ' + str(line_num))
             some_error_in_block = True
@@ -56,13 +56,13 @@ def process_sum_line(tokens, line_num):
     global vert_sums, some_error_in_block
     try:
         try:
-            sum = int(tokens[YOKO+2], 16)
+            sum = int(tokens[10], 16)
         except ValueError:
             print ('Sum parse error in line ' + str(line_num))
             raise Exception
         
         sum_work = 0
-        for i in range(2,YOKO+2):
+        for i in range(2,10):
             try:
                 val = int(tokens[i], 16)
             except ValueError:

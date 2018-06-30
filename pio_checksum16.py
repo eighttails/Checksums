@@ -2,14 +2,14 @@
 '''
 PiO,I/Oなどの工学社系雑誌に掲載されたダンプリスト
 PiOモニタ形式のダンプ、チェックサム出力
-8バイトx16行で1ブロック、
+16バイトx16行で1ブロック、
 1行毎に単純サム、1ブロックごとに単純縦サムが付加される。
 '''
 
 import sys
 import re
 
-YOKO=8
+YOKO=16
 
 vert_sums = [0 for i in range(YOKO)]
 processing_addr = -1
