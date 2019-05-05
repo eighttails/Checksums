@@ -36,7 +36,7 @@ def process_line(tokens, line_num):
     for i in range(1,YOKO+1):
         try:
             val = int(tokens[i], 16)
-            if val < 0 or val > 255 raise ValueError
+            if val < 0 or val > 255: raise ValueError
         except ValueError:
             print ('Value parse error in line ' + str(line_num))
             some_error_in_block = True
@@ -56,13 +56,13 @@ def process_sum_line(tokens, line_num):
     global vert_sums, some_error_in_block
     try:
         try:
-            sum = int(tokens[YOKO+2], 16)
+            sum = int(tokens[YOKO+1], 16)
         except ValueError:
             print ('Sum parse error in line ' + str(line_num))
             raise Exception
         
         sum_work = 0
-        for i in range(2,YOKO+2):
+        for i in range(1,YOKO+1):
             try:
                 val = int(tokens[i], 16)
             except ValueError:
@@ -73,8 +73,8 @@ def process_sum_line(tokens, line_num):
             
             #すでに横サムにエラーが見つかっている場合は何もしない(表示が煩雑なので)
             if not some_error_in_block: 
-                if val != vert_sums[i-2] % 256:
-                    print ('Vertical checksum error in line ' + str(line_num) + ' col ' + str(i-2))
+                if val != vert_sums[i-1] % 256:
+                    print ('Vertical checksum error in line ' + str(line_num) + ' col ' + str(i-1))
             
         if sum != sum_work % 256:
                 print ('Block checksum error in line ' + str(line_num))
@@ -83,7 +83,7 @@ def process_sum_line(tokens, line_num):
         pass
     
     some_error_in_block = False
-    vert_sums = [0 for i in range(8)]
+    vert_sums = [0 for i in range(YOKO)]
 
 def process_file(fileName):
     line_num = 1 #行番号
@@ -91,8 +91,10 @@ def process_file(fileName):
         while True:
             line = f.readline()
             if not line: break
-            tokens = re.split('[: \n]', line)
-            if tokens[0] == 'Sum' and len(tokens) == 12:
+            line = line.replace('\n','')
+            tokens = re.split('[: ]+', line)
+            #print(tokens)
+            if tokens[0] == 'Sum' and len(tokens) == YOKO+2:
                 #チェックサム行
                 process_sum_line(tokens, line_num)
             else:
@@ -101,7 +103,7 @@ def process_file(fileName):
                     addr = int(tokens[0], 16)
                 except ValueError:
                     print ('Address parse error in line ' + str(line_num))
-                if addr >= 0 and addr <= 0xFFFF and len(tokens) == 11:
+                if addr >= 0 and addr <= 0xFFFF and len(tokens) == YOKO+2:
                     process_line(tokens, line_num)
                 else:
                     #チェックサム、データ行どちらにも該当しない場合はエラー
@@ -115,7 +117,7 @@ if __name__ == '__main__':
         print("usage: " + argv[0] + " filename")
         sys.exit()
 
-    vert_sums = [0 for i in range(8)]
+    vert_sums = [0 for i in range(YOKO)]
     processing_addr = -1
     some_error_in_block = False
         
